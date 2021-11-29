@@ -10,10 +10,11 @@ WORKDIR /app
 RUN mkdir /app/cert
 
 ENV DERP_DOMAIN your-hostname.com
+ENV DERP_CERT_MODE letsencrypt
 ENV DERP_CERT_DIR /app/certs
 ENV DERP_ADDR :443
 ENV DERP_STUN true
 
 COPY --from=builder /go/bin/derper .
 
-CMD /app/derper --hostname $DERP_DOMAIN --certdir $DERP_CERT_DIR --a $DERP_ADDR --stun $DERP_STUN
+CMD /app/derper --hostname $DERP_DOMAIN --certmode $DERP_CERT_MODE --certdir $DERP_CERT_DIR --a $DERP_ADDR --stun $DERP_STUN
