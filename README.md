@@ -1,4 +1,6 @@
 # Derper
+![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg) 
+![platfrom](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-brightgreen)
 
 # Setup
 
