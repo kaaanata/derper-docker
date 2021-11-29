@@ -3,7 +3,9 @@ name: Docker Image
 on:
   push:
     branches: [main]
-
+  schedule:
+    # Runs "at minute 55 past every hour" (see https://crontab.guru)
+    - cron: '0 0 * * MON'
 jobs:
   build:
     runs-on: ubuntu-latest
