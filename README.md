@@ -4,7 +4,7 @@
 
 # Setup
 
-> required: set env `DERP_HOSTNAME` to your domain
+> required: set env `DERP_DOMAIN` to your domain
 
 ```bash
 docker run -e DERP_DOMAIN=derper.your-domain.com -p 80:80 -p 443:443 -p 3478:3478 ghcr.io/kaaanata/derper
@@ -12,7 +12,7 @@ docker run -e DERP_DOMAIN=derper.your-domain.com -p 80:80 -p 443:443 -p 3478:347
 
 | env           | required | description                                                    | default value     |
 | ------------- | -------- | -------------------------------------------------------------- | ----------------- |
-| DERP_HOSTNAME | true     | derper server hostname                                         | your-hostname.com |
+| DERP_DOMAIN | true     | derper server hostname                                         | your-hostname.com |
 | DERP_CERT_DIR | false    | directory to store LetsEncrypt certs(if addr's port is :443)   | /app/certs        |
 | DERP_CERT_MODE| false    | mode for getting a cert. possible options: manual, letsencrypt | letsencrypt       |
 | DERP_ADDR     | false    | listening server address                                       | :443              |
