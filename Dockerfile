@@ -19,5 +19,11 @@ ENV DERP_VERIFY_CLIENTS false
 
 COPY --from=builder /go/bin/derper .
 
-CMD /app/derper --hostname $DERP_DOMAIN --certmode $DERP_CERT_MODE --certdir $DERP_CERT_DIR --a $DERP_ADDR --stun $DERP_STUN  --http-port $DERP_HTTP_PORT --verify-clients $DERP_VERIFY_CLIENTS
+CMD /app/derper --hostname=$DERP_DOMAIN \
+    --certmode=$DERP_CERT_MODE \
+    --certdir=$DERP_CERT_DIR \
+    --a=$DERP_ADDR \
+    --stun=$DERP_STUN  \
+    --http-port=$DERP_HTTP_PORT \
+    --verify-clients=$DERP_VERIFY_CLIENTS
 
