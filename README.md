@@ -1,6 +1,6 @@
 # Derper
-![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg) 
-![platfrom](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-brightgreen)
+[![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg)](https://hub.docker.com/r/ghcr.io/kaaanata/derper) 
+[![platfrom](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper/tags)
 
 # Setup
 
