@@ -7,7 +7,12 @@ RUN go install tailscale.com/cmd/derper@main
 FROM ubuntu
 WORKDIR /app
 
-RUN mkdir /app/cert
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends apt-utils && \
+    apt-get install -y ca-certificates && \
+    mkdir /app/cert
 
 ENV DERP_DOMAIN your-hostname.com
 ENV DERP_CERT_MODE letsencrypt

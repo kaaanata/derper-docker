@@ -1,6 +1,7 @@
 # Derper
-[![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg)](https://hub.docker.com/r/ghcr.io/kaaanata/derper) 
-[![docker pulls](https://img.shields.io/docker/pulls/ghcr.io/kaaanata/derper.svg?color=brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper) 
+
+[![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg)](https://hub.docker.com/r/ghcr.io/kaaanata/derper)
+[![docker pulls](https://img.shields.io/docker/pulls/ghcr.io/kaaanata/derper.svg?color=brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper)
 [![platfrom](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper/tags)
 
 # Setup
@@ -8,7 +9,7 @@
 > required: set env `DERP_DOMAIN` to your domain
 
 ```bash
-docker run -e DERP_DOMAIN=derper.your-domain.com -p 80:80 -p 443:443 -p 3478:3478 ghcr.io/kaaanata/derper
+docker run -e DERP_DOMAIN=derper.your-domain.com -p 80:80 -p 443:443 -p 3478:3478/udp ghcr.io/kaaanata/derper
 ```
 
 | env                 | required | description                                                            | default value     |
