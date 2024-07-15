@@ -22,6 +22,7 @@ ENV DERP_STUN true
 ENV DERP_STUN_PORT 3478
 ENV DERP_HTTP_PORT 80
 ENV DERP_VERIFY_CLIENTS false
+ENV DERP_VERIFY_CLIENT_URL ""
 
 COPY --from=builder /go/bin/derper .
 
@@ -32,5 +33,6 @@ CMD /app/derper --hostname=$DERP_DOMAIN \
     --stun=$DERP_STUN  \
     --stun-port=$DERP_STUN_PORT \
     --http-port=$DERP_HTTP_PORT \
-    --verify-clients=$DERP_VERIFY_CLIENTS
+    --verify-clients=$DERP_VERIFY_CLIENTS \
+    --verify-client-url=$DERP_VERIFY_CLIENT_URL
 
