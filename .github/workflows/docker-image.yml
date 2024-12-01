@@ -6,34 +6,69 @@ on:
   schedule:
     # Runs "every Monday" (see https://crontab.guru)
     - cron: '0 0 * * MON'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          logout: false
+
       - name: Log in to DockerHub Registry
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Get latest tailscale version
+        run: |
+          TAILSCALE_VERSION=$(curl -s https://api.github.com/repos/tailscale/tailscale/releases/latest | jq -r '.tag_name')
+          echo "Latest tailscale version: $TAILSCALE_VERSION"
+          echo TAILSCALE_VERSION=$TAILSCALE_VERSION >> $GITHUB_ENV
+
+      - name: Check if the image exists
+        run: |
+          GHCR_TOKEN=$(echo ${{ secrets.GITHUB_TOKEN }} | base64)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GHCR_TOKEN" \
+            https://ghcr.io/v2/${{ github.repository }}/manifests/${{ env.TAILSCALE_VERSION }}
+            )
+          IMAGE_EXISTS=$(if [ $HTTP_CODE -eq 200 ]; then echo "true"; else echo "false"; fi)
+          echo "HTTP code: $HTTP_CODE, Image exists: $IMAGE_EXISTS"
+          echo IMAGE_EXISTS=$IMAGE_EXISTS >> $GITHUB_ENV
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
-        uses: docker/build-push-action@v2
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
+        uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64, linux/arm64
           push: true
           tags: |
-            ghcr.io/fredliang44/derper:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/derper:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/derper:${{ github.sha }}
+            ${{ github.actor }}/derper:${{ env.TAILSCALE_VERSION }}
+            ${{ github.actor }}/derper:latest
+            ghcr.io/${{ github.actor }}/derper:${{ env.TAILSCALE_VERSION }}
+            ghcr.io/${{ github.actor }}/derper:latest
+          build-args: |
+            DERP_VERSION=${{ env.TAILSCALE_VERSION }}
