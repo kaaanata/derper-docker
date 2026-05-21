@@ -91,3 +91,5 @@ jobs:
             ccr.ccs.tencentyun.com/osc-org/derper:latest
           build-args: |
             DERP_VERSION=${{ env.TAILSCALE_VERSION }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.actor }}/derper:cache
+          cache-to: type=registry,ref=ghcr.io/${{ github.actor }}/derper:cache,mode=max
