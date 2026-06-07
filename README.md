@@ -1,33 +1,55 @@
 # Derper
 
-[![docker workflow](https://github.com/fredliang44/derper-docker/actions/workflows/docker-image.yml/badge.svg)](https://hub.docker.com/r/ghcr.io/kaaanata/derper)
-[![docker pulls](https://img.shields.io/docker/pulls/ghcr.io/kaaanata/derper.svg?color=brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper)
-[![platfrom](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-brightgreen)](https://hub.docker.com/r/ghcr.io/kaaanata/derper/tags)
+Minimal Docker image for [Tailscale DERP](https://tailscale.com/kb/1118/custom-derp-servers/) relay servers.  
+Tailscale version is auto-synced with [Headscale](https://github.com/juanfont/headscale) for guaranteed compatibility.
 
-# Setup
+**Platforms:** `linux/amd64` · `linux/arm64` · `linux/arm/v7`
 
-> required: set env `DERP_DOMAIN` to your domain
+## Quick start
 
 ```bash
-docker run -e DERP_DOMAIN=derper.your-domain.com -p 80:80 -p 443:443 -p 3478:3478/udp ghcr.io/kaaanata/derper
+docker run -e DERP_DOMAIN=derp.example.com \
+  -p 80:80 -p 443:443 -p 3478:3478/udp \
+  ghcr.io/andrewcruz36456/derper
 ```
 
-| env                    | required | description                                                                 | default value     |
-| -------------------    | -------- | ----------------------------------------------------------------------      | ----------------- |
-| DERP_DOMAIN            | true     | derper server hostname                                                      | your-hostname.com |
-| DERP_CERT_DIR          | false    | directory to store LetsEncrypt certs(if addr's port is :443)                | /app/certs        |
-| DERP_CERT_MODE         | false    | mode for getting a cert. possible options: manual, letsencrypt              | letsencrypt       |
-| DERP_ADDR              | false    | listening server address                                                    | :443              |
-| DERP_STUN              | false    | also run a STUN server                                                      | true              |
-| DERP_STUN_PORT         | false    | The UDP port on which to serve STUN.                                        | 3478              |
-| DERP_HTTP_PORT         | false    | The port on which to serve HTTP. Set to -1 to disable                       | 80                |
-| DERP_VERIFY_CLIENTS    | false    | verify clients to this DERP server through a local tailscaled instance      | false             |
-| DERP_VERIFY_CLIENT_URL | false    | if non-empty, an admission controller URL for permitting client connections | ""                |
+## Environment variables
 
-# Usage
+| Variable                         | Default           | Description                                              |
+| -------------------------------- | ----------------- | -------------------------------------------------------- |
+| `DERP_DOMAIN`                    | your-hostname.com | **Required.** Your DERP server hostname                  |
+| `DERP_CERT_MODE`                 | letsencrypt       | Certificate mode: `letsencrypt` or `manual`              |
+| `DERP_CERT_DIR`                  | /app/certs        | Certificate directory                                    |
+| `DERP_ADDR`                      | :443              | HTTPS listen address                                     |
+| `DERP_HTTP_PORT`                 | 80                | HTTP port. Set to `-1` to disable                        |
+| `DERP_STUN`                      | true              | Enable STUN server                                       |
+| `DERP_STUN_PORT`                 | 3478              | STUN UDP port                                            |
+| `DERP_VERIFY_CLIENTS`            | false             | Verify clients via local tailscaled socket               |
+| `DERP_VERIFY_CLIENT_URL`         | —                 | Admission controller URL                                 |
+| `DERP_VERIFY_CLIENT_URL_FAIL_OPEN` | true            | Allow access if admission controller is unreachable      |
+| `TZ`                             | UTC               | Timezone                                                 |
 
-Fully DERP setup offical documentation: https://tailscale.com/kb/1118/custom-derp-servers/
+## Manual certificates
+
+```bash
+docker run -e DERP_DOMAIN=derp.example.com \
+  -e DERP_CERT_MODE=manual \
+  -v /etc/letsencrypt/live/derp.example.com/fullchain.pem:/app/certs/derp.example.com.crt:ro \
+  -v /etc/letsencrypt/live/derp.example.com/privkey.pem:/app/certs/derp.example.com.key:ro \
+  -p 443:443 -p 3478:3478/udp \
+  ghcr.io/andrewcruz36456/derper
+```
 
 ## Client verification
 
-In order to use `DERP_VERIFY_CLIENTS`, the container needs access to Tailscale's Local API, which can usually be accessed through `/var/run/tailscale/tailscaled.sock`. If you're running Tailscale bare-metal on Linux, adding this to the `docker run` command should be enough: `-v /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock`
+To use `DERP_VERIFY_CLIENTS`, mount the Tailscale socket:
+
+```bash
+-v /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
+```
+
+For Headscale (v0.24.0+), use the built-in admission controller:
+
+```bash
+-e DERP_VERIFY_CLIENT_URL=https://<headscale-domain>/verify
+```
