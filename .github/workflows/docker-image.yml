@@ -3,8 +3,6 @@ name: Docker Image
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   schedule:
     # Runs "every Monday" (see https://crontab.guru)
     - cron: '0 0 * * MON'
@@ -19,77 +17,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Log in to GitHub Docker Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          logout: false
 
       - name: Log in to DockerHub Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Resolve image and latest Tailscale version
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+      - name: Get latest tailscale version
         run: |
-          TAILSCALE_VERSION=$(gh api repos/tailscale/tailscale/releases/latest --jq '.tag_name')
-          [[ "$TAILSCALE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          echo "Latest Tailscale version: $TAILSCALE_VERSION"
+          TAILSCALE_VERSION=$(curl -s https://api.github.com/repos/tailscale/tailscale/releases/latest | jq -r '.tag_name')
+          echo "Latest tailscale version: $TAILSCALE_VERSION"
           echo "TAILSCALE_VERSION=$TAILSCALE_VERSION" >> "$GITHUB_ENV"
-          echo "GHCR_IMAGE=ghcr.io/${REPOSITORY_OWNER,,}/derper" >> "$GITHUB_ENV"
 
       - name: Check if the image exists
-        if: github.event_name == 'schedule'
-        env:
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_PASSWORD: ${{ github.token }}
         run: |
-          IMAGE_PATH=${GHCR_IMAGE#ghcr.io/}
-          GHCR_TOKEN=$(curl --fail-with-body --silent --show-error \
-            --user "$GHCR_USERNAME:$GHCR_PASSWORD" \
-            --get --data-urlencode 'service=ghcr.io' \
-            --data-urlencode "scope=repository:$IMAGE_PATH:pull" \
-            https://ghcr.io/token | jq -er '.token | select(type == "string" and length > 0)')
-          echo "::add-mask::$GHCR_TOKEN"
-          HTTP_CODE=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --header "Authorization: Bearer $GHCR_TOKEN" \
-            --header 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
-            "https://ghcr.io/v2/$IMAGE_PATH/manifests/$TAILSCALE_VERSION")
-          case "$HTTP_CODE" in
-            200) echo 'IMAGE_EXISTS=true' >> "$GITHUB_ENV" ;;
-            404) echo 'IMAGE_EXISTS=false' >> "$GITHUB_ENV" ;;
-            *) echo "::error::GHCR manifest check failed with HTTP $HTTP_CODE"; exit 1 ;;
-          esac
+          IMAGE_EXISTS=$(if docker manifest inspect ghcr.io/${{ github.repository_owner }}/derper:${{ env.TAILSCALE_VERSION }} > /dev/null; then echo "true"; else echo "false"; fi)
+          echo "Image exists: $IMAGE_EXISTS"
+          echo "IMAGE_EXISTS=$IMAGE_EXISTS" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
         if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4.3.0
 
       - name: Set up Docker Buildx
         if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4.3.0
 
       - name: Build and push
         if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7.3.0
         with:
           context: .
           platforms: linux/amd64, linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/derper:${{ env.TAILSCALE_VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/derper:latest
-            ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}/derper:${{ github.sha }}
-            ${{ env.GHCR_IMAGE }}:${{ env.TAILSCALE_VERSION }}
-            ${{ env.GHCR_IMAGE }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/derper:${{ env.TAILSCALE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/derper:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/derper:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/derper:${{ env.TAILSCALE_VERSION }}
+            ghcr.io/${{ github.repository_owner }}/derper:latest
           build-args: |
             DERP_VERSION=${{ env.TAILSCALE_VERSION }}
